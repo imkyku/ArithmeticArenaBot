@@ -1,0 +1,12 @@
+node_modules
+pnpm-lock.yaml
+dist
+coverage
+.env
+.env.*
+!.env.example
+.DS_Store
+.idea
+.vscode
+playwright-report
+test-results
