@@ -121,3 +121,7 @@ docker compose up --build
 - Use HTTPS + secure headers in production.
 - Keep MongoDB/Redis private network only.
 - Rotate secrets and avoid logging sensitive payloads.
+
+## Deployment Manual
+
+See full Russian production guide: `DEPLOYMENT_RU.md`.
