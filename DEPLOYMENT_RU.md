@@ -170,6 +170,23 @@ sudo npm i -g pnpm@9.12.0
 pnpm -v
 ```
 
+### ВАЖНО про lockfile (исправляет вашу ошибку `ERR_PNPM_NO_LOCKFILE`)
+
+В репозитории должен быть **закоммичен** `pnpm-lock.yaml`.
+
+- На **CI/production** используйте `pnpm install --frozen-lockfile` (строгая воспроизводимость).
+- Если lockfile отсутствует (первый деплой/старый репозиторий), выполните один раз:
+
+```bash
+cd /opt/arena/current
+pnpm install --no-frozen-lockfile
+```
+
+После этого обязательно:
+
+1. Закоммитьте `pnpm-lock.yaml` в репозиторий.
+2. Со следующего деплоя вернитесь к `--frozen-lockfile`.
+
 ---
 
 ## 7. Installing and securing MongoDB (Установка и защита MongoDB)
@@ -395,7 +412,7 @@ sudo adduser --system --group --home /opt/arena arena
 ### 9.2 Структура директорий
 
 ```bash
-sudo mkdir -p /opt/arena/{app,releases,shared,logs,backups}
+sudo mkdir -p /opt/arena/{releases,shared,logs,backups}
 sudo chown -R arena:arena /opt/arena
 sudo chmod 750 /opt/arena
 ```
@@ -403,7 +420,7 @@ sudo chmod 750 /opt/arena
 Рекомендуемая схема:
 
 - `/opt/arena/releases/<timestamp>` — каждый релиз
-- `/opt/arena/app` — symlink на текущий релиз
+- `/opt/arena/current` — symlink на текущий релиз (рекомендуемое имя, чтобы не конфликтовать с реальной директорией)
 - `/opt/arena/shared/.env.api` — постоянные секреты
 - `/opt/arena/logs` — дополнительные app-логи (если не только journald)
 
@@ -419,8 +436,8 @@ REL=$(sudo -u arena -H bash -lc 'ls -1 /opt/arena/releases | tail -n1')
 
 sudo -u arena -H bash -lc "cd /opt/arena/releases/$REL && git clone <YOUR_REPO_URL> ."
 
-sudo ln -sfn /opt/arena/releases/$REL /opt/arena/app
-sudo chown -h arena:arena /opt/arena/app
+sudo ln -sfn /opt/arena/releases/$REL /opt/arena/current
+sudo chown -h arena:arena /opt/arena/current
 ```
 
 ### Вариант B: rsync с CI runner/локальной машины
@@ -471,7 +488,7 @@ sudo chmod 640 /opt/arena/shared/.env.api
 
 ### 11.3 Frontend env (публичный)
 
-`/opt/arena/app/apps/web/.env.production`:
+`/opt/arena/current/apps/web/.env.production` (или внутри конкретного релиза, например `/opt/arena/releases/20260306143131/apps/web/.env.production`):
 
 ```env
 VITE_API_URL=https://jewlab.online/api
@@ -488,7 +505,7 @@ VITE_WS_URL=https://jewlab.online
 
 ```bash
 sudo -u arena -H bash -lc '
-  cd /opt/arena/app
+  cd /opt/arena/current
   corepack enable || true
   corepack prepare pnpm@9.12.0 --activate || true
   pnpm install --frozen-lockfile
@@ -498,16 +515,55 @@ sudo -u arena -H bash -lc '
 '
 ```
 
+Если получили `ERR_PNPM_NO_LOCKFILE`, выполните **одноразовый recovery**:
+
+```bash
+sudo -u arena -H bash -lc '
+  cd /opt/arena/current
+  pnpm install --no-frozen-lockfile
+  pnpm --filter @arena/shared build
+  pnpm --filter @arena/api build
+  pnpm --filter @arena/web build
+'
+```
+
+И затем зафиксируйте `pnpm-lock.yaml` в git (иначе ошибка повторится на следующем сервере/релизе).
+
 Проверка артефактов:
 
 ```bash
-sudo -u arena -H bash -lc 'ls -lah /opt/arena/app/apps/api/dist/main.js'
-sudo -u arena -H bash -lc 'ls -lah /opt/arena/app/apps/web/dist'
+sudo -u arena -H bash -lc 'ls -lah /opt/arena/current/apps/api/dist/main.js'
+sudo -u arena -H bash -lc 'ls -lah /opt/arena/current/apps/web/dist'
 ```
 
 Если `main.js` не найден — проверьте `apps/api/tsconfig.json` и build script.
 
 ---
+
+
+### 12.1 Быстрый фикс именно для вашей ошибки `ERR_PNPM_NO_PKG_MANIFEST`
+
+Если в системе уже получилась структура вида `/opt/arena/app/20260306143131` (т.е. `app` — обычная папка, не symlink), выполните:
+
+```bash
+# 1) Найти фактический корень релиза (где лежит package.json)
+find /opt/arena -maxdepth 4 -type f -name package.json
+
+# 2) Сделать рекомендованный symlink current -> release
+sudo ln -sfn /opt/arena/app/20260306143131 /opt/arena/current
+sudo chown -h arena:arena /opt/arena/current
+
+# 3) Запускать install/build из /opt/arena/current
+sudo -u arena -H bash -lc '
+  cd /opt/arena/current
+  pnpm install --no-frozen-lockfile
+  pnpm --filter @arena/shared build
+  pnpm --filter @arena/api build
+  pnpm --filter @arena/web build
+'
+```
+
+Почему произошла ошибка: (1) команда выполнялась не в корне релиза, где лежит `package.json`; (2) в репозитории отсутствовал `pnpm-lock.yaml`, а вы запускали `--frozen-lockfile`.
 
 ## 13. Running the backend with systemd (Запуск backend через systemd)
 
@@ -531,9 +587,9 @@ Wants=mongod.service redis-server.service
 Type=simple
 User=arena
 Group=arena
-WorkingDirectory=/opt/arena/app
+WorkingDirectory=/opt/arena/current
 EnvironmentFile=/opt/arena/shared/.env.api
-ExecStart=/usr/bin/node /opt/arena/app/apps/api/dist/main.js
+ExecStart=/usr/bin/node /opt/arena/current/apps/api/dist/main.js
 Restart=always
 RestartSec=3
 KillSignal=SIGTERM
@@ -589,7 +645,7 @@ sudo systemctl show arena-api -p NRestarts
 
 ```bash
 sudo mkdir -p /var/www/arena-web
-sudo rsync -a --delete /opt/arena/app/apps/web/dist/ /var/www/arena-web/
+sudo rsync -a --delete /opt/arena/current/apps/web/dist/ /var/www/arena-web/
 sudo chown -R www-data:www-data /var/www/arena-web
 ```
 
@@ -980,7 +1036,7 @@ mongorestore --uri="mongodb://..." --archive=/opt/backups/mongo/<file>.archive -
 2. Залить код.
 3. `pnpm install && build`.
 4. Обновить frontend статику в `/var/www/arena-web`.
-5. Переключить `/opt/arena/app` symlink.
+5. Переключить `/opt/arena/current` symlink.
 6. `systemctl restart arena-api`.
 7. Smoke tests.
 8. Если ошибка — откатить symlink назад и restart.
@@ -995,7 +1051,7 @@ sudo -u arena mkdir -p /opt/arena/releases/$NEW_REL
 sudo -u arena -H bash -lc "cd /opt/arena/releases/$NEW_REL && pnpm install --frozen-lockfile && pnpm -r build"
 sudo rsync -a --delete /opt/arena/releases/$NEW_REL/apps/web/dist/ /var/www/arena-web/
 
-sudo ln -sfn /opt/arena/releases/$NEW_REL /opt/arena/app
+sudo ln -sfn /opt/arena/releases/$NEW_REL /opt/arena/current
 sudo systemctl restart arena-api
 ```
 
@@ -1095,19 +1151,20 @@ sudo systemctl enable --now redis-server
 
 # 4) App user + dirs
 sudo adduser --system --group --home /opt/arena arena
-sudo mkdir -p /opt/arena/{app,releases,shared,logs,backups}
+sudo mkdir -p /opt/arena/{releases,shared,logs,backups}
 sudo chown -R arena:arena /opt/arena
 
 # 5) Deploy code (example)
 sudo -u arena -H bash -lc 'cd /opt/arena/releases && mkdir -p $(date +%Y%m%d%H%M%S)'
-# git clone into latest release, then symlink /opt/arena/app
+# git clone into latest release, then symlink /opt/arena/current
 
 # 6) Build
-sudo -u arena -H bash -lc 'cd /opt/arena/app && pnpm install --frozen-lockfile && pnpm -r build'
+sudo -u arena -H bash -lc 'cd /opt/arena/current && pnpm install --no-frozen-lockfile && pnpm -r build'
+# затем закоммитьте pnpm-lock.yaml; на следующих релизах используйте --frozen-lockfile
 
 # 7) Front static
 sudo mkdir -p /var/www/arena-web
-sudo rsync -a --delete /opt/arena/app/apps/web/dist/ /var/www/arena-web/
+sudo rsync -a --delete /opt/arena/current/apps/web/dist/ /var/www/arena-web/
 
 # 8) systemd backend
 sudo systemctl daemon-reload
@@ -1146,7 +1203,7 @@ sudo ufw enable
 ### Rollback checklist
 
 - [ ] Найти предыдущий стабильный release в `/opt/arena/releases/<old>`
-- [ ] `ln -sfn /opt/arena/releases/<old> /opt/arena/app`
+- [ ] `ln -sfn /opt/arena/releases/<old> /opt/arena/current`
 - [ ] восстановить предыдущий frontend `dist` в `/var/www/arena-web`
 - [ ] `sudo systemctl restart arena-api`
 - [ ] `curl https://jewlab.online/api/health`

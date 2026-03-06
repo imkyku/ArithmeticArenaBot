@@ -125,3 +125,5 @@ docker compose up --build
 ## Deployment Manual
 
 See full Russian production guide: `DEPLOYMENT_RU.md`.
+
+> Note: `pnpm-lock.yaml` must be committed. Use `pnpm install --no-frozen-lockfile` only for first recovery when lockfile is missing, then commit lockfile and return to `--frozen-lockfile`.
