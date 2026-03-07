@@ -1,5 +1,10 @@
+<<<<<<< HEAD
+import type { OperationType } from '../types/game.js';
+import { applyOperation } from './rules.js';
+=======
 import type { OperationType } from '../types/game';
 import { applyOperation } from './rules';
+>>>>>>> main
 
 const pick = <T>(items: T[]) => items[Math.floor(Math.random() * items.length)];
 

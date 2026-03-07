@@ -1,5 +1,10 @@
+<<<<<<< HEAD
+import { absDistanceBigInt, digitLength, isExactDivision } from './math.js';
+import type { OperationType } from '../types/game.js';
+=======
 import { absDistanceBigInt, digitLength, isExactDivision } from './math';
 import type { OperationType } from '../types/game';
+>>>>>>> main
 
 const MAX_RESULT_DIGITS = 18;
 

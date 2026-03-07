@@ -11,6 +11,10 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
+<<<<<<< HEAD
+      "@arena/shared": ["packages/shared/src/index.ts"],
+=======
+>>>>>>> main
       "@arena/shared/*": ["packages/shared/src/*"],
       "@arena/config/*": ["packages/config/*"]
     }

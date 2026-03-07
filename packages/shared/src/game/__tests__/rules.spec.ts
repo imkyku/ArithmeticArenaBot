@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
+<<<<<<< HEAD
+import { applyOperation, calculateElo, computeElixir, getOperationCost, resolveByDistance } from '../../index.js';
+=======
 import { applyOperation, calculateElo, computeElixir, getOperationCost, resolveByDistance } from '../../index';
+>>>>>>> main
 
 describe('game rules', () => {
   it('calculates operation costs', () => {
