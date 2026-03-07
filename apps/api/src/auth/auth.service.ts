@@ -2,7 +2,11 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import crypto from 'crypto';
+<<<<<<< HEAD
 import { User } from '../database/schemas.js';
+=======
+import { User } from '../database/schemas';
+>>>>>>> main
 
 @Injectable()
 export class AuthService {

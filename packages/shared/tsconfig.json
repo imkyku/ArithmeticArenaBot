@@ -2,9 +2,13 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
+<<<<<<< HEAD
     "rootDir": "src",
     "declaration": true,
     "declarationMap": true
+=======
+    "rootDir": "src"
+>>>>>>> main
   },
   "include": ["src"]
 }

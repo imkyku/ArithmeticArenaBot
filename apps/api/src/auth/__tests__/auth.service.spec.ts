@@ -1,5 +1,9 @@
 import { UnauthorizedException } from '@nestjs/common';
+<<<<<<< HEAD
 import { AuthService } from '../../auth.service.js';
+=======
+import { AuthService } from '../../auth.service';
+>>>>>>> main
 
 describe('AuthService', () => {
   it('rejects payload without hash', () => {

@@ -13,6 +13,10 @@ export class User {
 }
 export type UserDocument = HydratedDocument<User>;
 export const UserSchema = SchemaFactory.createForClass(User);
+<<<<<<< HEAD
+=======
+UserSchema.index({ telegramId: 1 }, { unique: true });
+>>>>>>> main
 
 @Schema({ timestamps: true })
 export class Rating {
@@ -24,6 +28,10 @@ export class Rating {
   @Prop({ default: 0 }) draws!: number;
 }
 export const RatingSchema = SchemaFactory.createForClass(Rating);
+<<<<<<< HEAD
+=======
+RatingSchema.index({ userId: 1 }, { unique: true });
+>>>>>>> main
 RatingSchema.index({ rating: -1, updatedAt: -1 });
 
 @Schema({ timestamps: true })

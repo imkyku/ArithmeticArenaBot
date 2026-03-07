@@ -1,6 +1,10 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+<<<<<<< HEAD
 import { AppModule } from './app.module.js';
+=======
+import { AppModule } from './app.module';
+>>>>>>> main
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap(): Promise<void> {

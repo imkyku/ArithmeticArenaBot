@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
+<<<<<<< HEAD
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "emitDecoratorMetadata": true,
@@ -15,4 +16,12 @@
     "**/*.test.ts",
     "test"
   ]
+=======
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
+  },
+  "include": ["src", "test"]
+>>>>>>> main
 }
